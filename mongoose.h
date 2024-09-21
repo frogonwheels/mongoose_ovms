@@ -54,6 +54,10 @@ extern "C" {
 #if !defined(MG_ARCH) || (MG_ARCH == MG_ARCH_CUSTOM)
 #include "mongoose_config.h"  // keep this include
 #endif
+// Local tweaks, applied before any of Mongoose's own headers.
+#ifdef MG_LOCALS
+#include <mg_locals.h>
+#endif
 
 #if !defined(MG_ARCH)
 #error "MG_ARCH is not specified and we couldn't guess it. Define MG_ARCH=... in your compiler"
@@ -179,17 +183,23 @@ extern "C" {
 #include <FreeRTOS.h>
 #include <task.h>
 
-#define calloc(a, b) mg_calloc(a, b)
-#define free(a) vPortFree(a)
-#define malloc(a) pvPortMalloc(a)
-#define strdup(s) ((char *) mg_strdup(mg_str(s)).buf)
-
+#ifndef MG_CALLOC
+#define MG_CALLOC(a, b) mg_calloc(a, b)
 // Re-route calloc/free to the FreeRTOS's functions, don't use stdlib
 static inline void *mg_calloc(size_t cnt, size_t size) {
   void *p = pvPortMalloc(cnt * size);
   if (p != NULL) memset(p, 0, size * cnt);
   return p;
 }
+#endif
+#ifndef MG_FREE
+#define MG_FREE(a) vPortFree(a)
+#endif
+#ifndef MG_MALLOC
+#define MG_MALLOC(a) pvPortMalloc(a)
+#endif
+#define strdup(s) ((char *) mg_strdup(mg_str(s)).ptr)
+
 
 #define mkdir(a, b) mg_mkdir(a, b)
 static inline int mg_mkdir(const char *path, mode_t mode) {
@@ -1069,7 +1079,17 @@ struct mg_str mg_unpacked(const char *path);  // Packed file as mg_str
 #define assert(x)
 #endif
 
+#ifndef MG_FREE
+#define MG_FREE(a) free(a)
+#endif
+#ifndef MG_MALLOC
+#define MG_MALLOC(a) malloc(a)
+#endif
+#ifndef MG_CALLOC
+#define MG_CALLOC(a,b) calloc(a,b)
+#endif
 void mg_bzero(volatile unsigned char *buf, size_t len);
+
 bool mg_random(void *buf, size_t len);
 char *mg_random_str(char *buf, size_t len);
 uint16_t mg_ntohs(uint16_t net);

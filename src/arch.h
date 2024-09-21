@@ -27,6 +27,10 @@
 #if !defined(MG_ARCH) || (MG_ARCH == MG_ARCH_CUSTOM)
 #include "mongoose_config.h"  // keep this include
 #endif
+// Local tweaks, applied before any of Mongoose's own headers.
+#ifdef MG_LOCALS
+#include <mg_locals.h>
+#endif
 
 #if !defined(MG_ARCH)
 #error "MG_ARCH is not specified and we couldn't guess it. Define MG_ARCH=... in your compiler"
